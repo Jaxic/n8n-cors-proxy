@@ -1,26 +1,43 @@
-export default async function handler(req, res) {
+const axios = require('axios');
+
+module.exports = async (req, res) => {
+  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
 
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    return res.status(200).end(); // Respond to preflight
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.status(200).end();
+    return;
   }
 
   try {
-    const response = await fetch('https://jaxic.app.n8n.cloud/webhook/feadab27-dddf-4b36-8d41-b2b06bc30d24', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body),
+    // Extract the n8n webhook URL from query parameters
+    const targetUrl = req.query.url;
+    
+    if (!targetUrl) {
+      return res.status(400).json({ error: 'Missing URL parameter' });
+    }
+
+    // Forward the request to n8n
+    const response = await axios({
+      method: req.method,
+      url: targetUrl,
+      data: req.body,
+      headers: {
+        'Content-Type': 'application/json',
+        // Forward other required headers if needed
+      }
     });
 
-    const data = await response.text();
-    res.status(response.status).send(data);
-  } catch (err) {
-    res.status(500).json({ error: 'Proxy error', details: err.message });
+    // Return the response from n8n
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    console.error('Proxy error:', error);
+    res.status(500).json({
+      error: 'Proxy error',
+      message: error.message
+    });
   }
-}
+};
