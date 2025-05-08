@@ -1,9 +1,9 @@
 {
-  "name": "n8n-cors-proxy",
-  "version": "1.0.0",
-  "description": "CORS proxy for n8n webhooks",
-  "main": "api/proxy.js",
-  "dependencies": {
-    "axios": "^1.4.0"
-  }
+  "version": 2,
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/proxy.js"
+    }
+  ]
 }
